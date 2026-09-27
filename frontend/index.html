@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Plant Disease Detection</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="bg-blobs" aria-hidden="true">
+    <span class="blob blob-1"></span>
+    <span class="blob blob-2"></span>
+    <span class="blob blob-3"></span>
+  </div>
+
+  <nav class="navbar">
+    <div class="nav-brand">🌿 PlantAI</div>
+    <div class="nav-tabs">
+      <button class="nav-tab active" data-tab="detect">Detect Disease</button>
+      <button class="nav-tab" data-tab="finder">Plant Finder</button>
+    </div>
+  </nav>
+
+  <main class="page">
+    <!-- ===== Detect Disease ===== -->
+    <section class="workspace" id="view-detect">
+      <div class="panel upload-panel">
+        <span class="badge">🤖 AI Agent</span>
+        <h1>Detect Disease</h1>
+        <p class="subtitle">Add up to 3 photos (leaf, whole plant, flower) — more angles means better accuracy.</p>
+
+        <label class="upload-box" id="box-detect">
+          <input type="file" id="input-detect" accept="image/*" multiple hidden />
+          <div class="upload-prompt">
+            <span class="upload-icon">📷</span>
+            <span class="upload-text">Drag & drop photos here</span>
+            <span class="upload-subtext">or click to browse (up to 3)</span>
+          </div>
+        </label>
+        <div class="thumb-row" id="thumbs-detect"></div>
+
+        <button id="btn-detect" disabled>
+          <span class="btn-label">Analyze</span>
+          <span class="btn-spinner" hidden></span>
+        </button>
+
+        <div class="agent-steps" id="steps-detect" hidden></div>
+        <div class="status-error" id="status-detect"></div>
+      </div>
+
+      <div class="panel result-panel">
+        <div class="empty-state" id="empty-detect">
+          <span class="empty-icon">🔬</span>
+          <p>Upload leaf photos to see the diagnosis here.</p>
+        </div>
+
+        <section id="result-detect" class="result" hidden>
+          <div class="result-row">
+            <div class="result-block">
+              <span class="result-label">Crop</span>
+              <span class="result-value" id="cropName">-</span>
+              <div class="meter"><div class="meter-fill" id="cropMeter"></div></div>
+              <span class="meter-label" id="cropProb">-</span>
+            </div>
+            <div class="result-block">
+              <span class="result-label">Diagnosis</span>
+              <span class="result-value" id="diseaseName">-</span>
+              <div class="meter"><div class="meter-fill" id="diseaseMeter"></div></div>
+              <span class="meter-label" id="diseaseProb">-</span>
+            </div>
+          </div>
+
+          <div id="extraDetails"></div>
+          <div id="fallbackSection" class="fallback-section" hidden></div>
+        </section>
+      </div>
+    </section>
+
+    <!-- ===== Plant Finder ===== -->
+    <section class="workspace" id="view-finder" hidden>
+      <div class="panel upload-panel">
+        <span class="badge">🔍 AI Agent</span>
+        <h1>Plant Finder</h1>
+        <p class="subtitle">Upload a clear photo to find out what plant it is — species, care tips, and more.</p>
+
+        <label class="upload-box" id="box-finder">
+          <input type="file" id="input-finder" accept="image/*" multiple hidden />
+          <div class="upload-prompt">
+            <span class="upload-icon">🌱</span>
+            <span class="upload-text">Drag & drop a photo here</span>
+            <span class="upload-subtext">or click to browse (up to 3)</span>
+          </div>
+        </label>
+        <div class="thumb-row" id="thumbs-finder"></div>
+
+        <button id="btn-finder" disabled>
+          <span class="btn-label">Identify</span>
+          <span class="btn-spinner" hidden></span>
+        </button>
+
+        <div class="agent-steps" id="steps-finder" hidden></div>
+        <div class="status-error" id="status-finder"></div>
+      </div>
+
+      <div class="panel result-panel">
+        <div class="empty-state" id="empty-finder">
+          <span class="empty-icon">🌿</span>
+          <p>Upload a photo to identify the plant here.</p>
+        </div>
+
+        <section id="result-finder" class="result" hidden>
+          <div class="finder-header">
+            <img id="finderImg" class="finder-img" hidden />
+            <div>
+              <span class="result-label">Plant</span>
+              <span class="result-value" id="finderName">-</span>
+              <div class="meter"><div class="meter-fill" id="finderMeter"></div></div>
+              <span class="meter-label" id="finderProb">-</span>
+            </div>
+          </div>
+          <div id="finderDetails"></div>
+        </section>
+      </div>
+    </section>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
