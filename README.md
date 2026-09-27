@@ -1,5 +1,7 @@
 # Plant Disease Detection
 
+AI-powered plant disease detection web app — upload leaf photos to identify crop diseases with treatment suggestions, using plant.id with a Gemini/GPT-4o fallback for low-confidence cases.
+
 Upload a photo of a plant leaf and get the crop name + disease diagnosis (with description and treatment), powered by [plant.id](https://plant.id/docs) (Kindwise). When the disease confidence is low, a second AI model (Gemini or GPT-4o) is automatically consulted for a second opinion.
 
 ## Stack
