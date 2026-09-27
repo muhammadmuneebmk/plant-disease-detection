@@ -8,7 +8,12 @@ from fastapi.middleware.cors import CORSMiddleware
 
 load_dotenv()
 
-KINDWISE_API_KEY = os.getenv("KINDWISE_API_KEY")
+def _clean_env(name: str) -> str | None:
+    value = os.getenv(name)
+    return value.strip() if value else value
+
+
+KINDWISE_API_KEY = _clean_env("KINDWISE_API_KEY")
 KINDWISE_URL = "https://plant.id/api/v3/identification"
 DISEASE_DETAILS = "description,treatment,common_names,url,classification"
 FINDER_DETAILS = (
@@ -19,11 +24,11 @@ FINDER_DETAILS = (
 FALLBACK_PROVIDER = os.getenv("FALLBACK_PROVIDER", "gemini").lower()
 CONFIDENCE_THRESHOLD = float(os.getenv("CONFIDENCE_THRESHOLD", "0.5"))
 
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+GEMINI_API_KEY = _clean_env("GEMINI_API_KEY")
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
 GEMINI_URL = f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent"
 
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+OPENAI_API_KEY = _clean_env("OPENAI_API_KEY")
 OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
 OPENAI_URL = "https://api.openai.com/v1/chat/completions"
 
