@@ -1,5 +1,5 @@
 // Update LIVE_BACKEND_URL after deploying the backend (Railway/Render/etc).
-const LIVE_BACKEND_URL = "https://plant-disease-detection-backend.up.railway.app";
+const LIVE_BACKEND_URL = "https://plant-disease-detection-backend-production-78e7.up.railway.app";
 const IS_LOCAL = location.protocol === "file:" || ["localhost", "127.0.0.1"].includes(location.hostname);
 const API_BASE = IS_LOCAL ? "http://localhost:8000" : LIVE_BACKEND_URL;
 const MAX_IMAGES = 3;
