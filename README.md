@@ -45,18 +45,21 @@ Open `frontend/index.html` directly in a browser, or serve it with `python -m ht
 
 ## Deploy it live (free)
 
-**Backend → Render:**
-1. Go to [dashboard.render.com](https://dashboard.render.com), sign in with GitHub.
-2. Click **New +** → **Blueprint**, select this repo. Render reads `render.yaml` and sets everything up automatically.
-3. When prompted, paste in your `KINDWISE_API_KEY` and `GEMINI_API_KEY` (the ones from your local `.env`) — these are entered directly in Render's dashboard, never committed to the repo.
-4. Deploy. Render gives you a URL like `https://plant-disease-detection-backend.onrender.com`.
-5. Note: the free tier sleeps after 15 minutes of inactivity — the first request after that takes ~30-50s to wake up.
+**Backend → Railway** (no credit card required to start — Render now requires one even on its free Blueprint flow):
+1. Go to [railway.app](https://railway.app), sign in with GitHub. You get $5 free credit for 30 days, no card needed — plenty for a small demo app.
+2. **New Project** → **Deploy from GitHub repo** → select `plant-disease-detection`.
+3. In the service settings, set **Root Directory** to `backend` (it's a monorepo). Railway reads `backend/Procfile` to know how to start the app.
+4. Under **Variables**, add: `KINDWISE_API_KEY`, `FALLBACK_PROVIDER=gemini`, `CONFIDENCE_THRESHOLD=0.5`, `GEMINI_API_KEY`, `GEMINI_MODEL=gemini-2.5-flash` (values from your local `.env`).
+5. Under **Settings → Networking**, click **Generate Domain** to get a public URL like `https://plant-disease-detection-backend.up.railway.app`.
+6. Note: after the 30-day/$5 trial runs out, Railway pauses the app unless you add a card — fine for demo/viva purposes, revisit later if you need it long-term.
+
+*(`render.yaml` is still in the repo if you get access to a card later and want to switch to Render instead — same env vars apply.)*
 
 **Frontend → Vercel:**
 1. Go to [vercel.com/new](https://vercel.com/new), sign in with GitHub, import this repo.
 2. Set **Root Directory** to `frontend` (important — it's a monorepo).
 3. Leave build settings as default (static site, no build command needed) and deploy.
-4. Update `RENDER_BACKEND_URL` at the top of `frontend/script.js` to your actual Render URL from the step above, commit and push — Vercel auto-redeploys.
+4. Update `LIVE_BACKEND_URL` at the top of `frontend/script.js` to your actual Railway URL from step 5 above, commit and push — Vercel auto-redeploys.
 
 ## Notes for the report / viva
 
