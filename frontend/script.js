@@ -1,4 +1,7 @@
-const API_BASE = "http://localhost:8000";
+// Update RENDER_BACKEND_URL after deploying the backend on Render.
+const RENDER_BACKEND_URL = "https://plant-disease-detection.onrender.com";
+const IS_LOCAL = location.protocol === "file:" || ["localhost", "127.0.0.1"].includes(location.hostname);
+const API_BASE = IS_LOCAL ? "http://localhost:8000" : RENDER_BACKEND_URL;
 const MAX_IMAGES = 3;
 
 // ---------- tab switching ----------

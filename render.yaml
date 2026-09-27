@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: plant-disease-detection-backend
+    runtime: python
+    rootDir: backend
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: KINDWISE_API_KEY
+        sync: false
+      - key: FALLBACK_PROVIDER
+        value: gemini
+      - key: CONFIDENCE_THRESHOLD
+        value: "0.5"
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GEMINI_MODEL
+        value: gemini-2.5-flash
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: OPENAI_MODEL
+        value: gpt-4o-mini

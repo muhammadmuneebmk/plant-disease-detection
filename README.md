@@ -37,11 +37,26 @@ pip install -r requirements.txt
 uvicorn main:app --reload --port 8000
 ```
 
-The API will be live at `http://localhost:8000`. Health check: `GET /`, prediction: `POST /predict` (multipart file upload, field name `file`).
+The API will be live at `http://localhost:8000`. Health check: `GET /`, disease detection: `POST /predict`, plant finder: `POST /identify` (both take multipart file uploads, field name `files`, repeatable up to 3).
 
 ## 3. Open the frontend
 
-Open `frontend/index.html` directly in a browser, or serve it with `python -m http.server` from the `frontend` folder. It calls the backend at `http://localhost:8000/predict`.
+Open `frontend/index.html` directly in a browser, or serve it with `python -m http.server` from the `frontend` folder. It calls the backend at `http://localhost:8000` automatically when running locally.
+
+## Deploy it live (free)
+
+**Backend → Render:**
+1. Go to [dashboard.render.com](https://dashboard.render.com), sign in with GitHub.
+2. Click **New +** → **Blueprint**, select this repo. Render reads `render.yaml` and sets everything up automatically.
+3. When prompted, paste in your `KINDWISE_API_KEY` and `GEMINI_API_KEY` (the ones from your local `.env`) — these are entered directly in Render's dashboard, never committed to the repo.
+4. Deploy. Render gives you a URL like `https://plant-disease-detection-backend.onrender.com`.
+5. Note: the free tier sleeps after 15 minutes of inactivity — the first request after that takes ~30-50s to wake up.
+
+**Frontend → Vercel:**
+1. Go to [vercel.com/new](https://vercel.com/new), sign in with GitHub, import this repo.
+2. Set **Root Directory** to `frontend` (important — it's a monorepo).
+3. Leave build settings as default (static site, no build command needed) and deploy.
+4. Update `RENDER_BACKEND_URL` at the top of `frontend/script.js` to your actual Render URL from the step above, commit and push — Vercel auto-redeploys.
 
 ## Notes for the report / viva
 
