@@ -263,8 +263,15 @@ function renderDetectResult(data) {
   const diseaseName = document.getElementById("diseaseName");
   const diseaseMeter = document.getElementById("diseaseMeter");
   const diseaseProb = document.getElementById("diseaseProb");
+  const meterWrap = document.getElementById("diseaseMeterWrap");
   const extraDetails = document.getElementById("extraDetails");
   extraDetails.innerHTML = "";
+  meterWrap.hidden = false;
+  diseaseProb.hidden = false;
+  document.getElementById("lowConfidence").hidden = true;
+
+  const hasSecondOpinion = renderFallback(data.fallback);
+  document.getElementById("result-tabs").hidden = !hasSecondOpinion;
 
   if (data.verdict === "healthy") {
     diseaseName.textContent = "Healthy";
@@ -279,24 +286,57 @@ function renderDetectResult(data) {
     if (details.description) extraDetails.appendChild(makeSection("Description", details.description));
     if (details.treatment) extraDetails.appendChild(makeTreatmentSection(details.treatment));
   } else {
-    diseaseName.textContent = "Unclear";
-    const hasHealth = data.health_probability != null;
-    setMeter(diseaseMeter, diseaseProb, hasHealth ? 1 - data.health_probability : null);
-    if (hasHealth) diseaseProb.textContent += " likely a problem, cause not confirmed";
-    if (data.candidates && data.candidates.length) {
-      const list = data.candidates
-        .map((c) => `${displayDiseaseName(c.name, c.common_name)}: ${Math.round(c.probability * 100)}%`)
-        .join(", ");
-      extraDetails.appendChild(
-        makeSection("Low-confidence possibilities", `${list}. None of these is reliable enough to treat as a diagnosis.`)
-      );
-    }
+    // Don't present plant.id's weak guesses as a result; point to Gemini instead.
+    diseaseName.textContent = "Low confidence";
+    meterWrap.hidden = true;
+    diseaseProb.hidden = true;
+    renderLowConfidence(data, hasSecondOpinion);
   }
 
-  renderFallback(data.fallback);
+  showResultTab(hasSecondOpinion ? "gemini" : "plantid");
   resultEl.hidden = false;
   scrollToResultOnMobile(resultEl);
 }
+
+function renderLowConfidence(data, hasSecondOpinion) {
+  document.getElementById("lowConfidence").hidden = false;
+  document.getElementById("goto-gemini").hidden = !hasSecondOpinion;
+  document.getElementById("lowConfidenceText").textContent = hasSecondOpinion
+    ? "plant.id isn't confident enough about these photos to give a reliable diagnosis. Please check Gemini's second opinion instead."
+    : "plant.id isn't confident enough about these photos to give a reliable diagnosis, and Gemini's second opinion isn't available right now (it may have reached its daily limit). Try again later, or retake clear daylight photos of the affected leaves.";
+
+  const raw = document.getElementById("rawGuesses");
+  raw.innerHTML = "";
+  raw.closest("details").open = false;
+  if (data.health_probability != null) {
+    const pct = Math.round((1 - data.health_probability) * 100);
+    raw.appendChild(makeSection("Health estimate", `${pct}% likely a problem, cause not confirmed.`));
+  }
+  if (data.candidates && data.candidates.length) {
+    const list = data.candidates
+      .map((c) => `${displayDiseaseName(c.name, c.common_name)}: ${Math.round(c.probability * 100)}%`)
+      .join(", ");
+    raw.appendChild(makeSection("Possible causes it considered", `${list}. None of these is reliable enough to treat as a diagnosis.`));
+  }
+}
+
+function showResultTab(name) {
+  document.querySelectorAll(".result-tab").forEach((t) => {
+    const active = t.dataset.rtab === name;
+    t.classList.toggle("active", active);
+    t.setAttribute("aria-selected", active);
+  });
+  document.getElementById("rtab-plantid").hidden = name !== "plantid";
+  document.getElementById("rtab-gemini").hidden = name !== "gemini";
+}
+
+document.querySelectorAll(".result-tab").forEach((t) => t.addEventListener("click", () => showResultTab(t.dataset.rtab)));
+document.querySelectorAll(".switch-tab-btn").forEach((b) =>
+  b.addEventListener("click", () => {
+    showResultTab(b.dataset.goto);
+    scrollToResultOnMobile(document.getElementById("result-detect"));
+  })
+);
 
 // On stacked (mobile) layouts the result renders below the upload panel, out of view.
 function scrollToResultOnMobile(el) {
@@ -312,7 +352,7 @@ function renderFallback(fallback) {
   document.querySelectorAll("#thumbs-detect .thumb").forEach((t) => t.classList.remove("flagged"));
   if (!fallback || !fallback.diagnosis) {
     section.hidden = true;
-    return;
+    return false;
   }
 
   const label = FALLBACK_LABELS[fallback.provider] || fallback.provider;
@@ -336,6 +376,7 @@ function renderFallback(fallback) {
     section.innerHTML += `<p><strong>Suggested action:</strong> ${escapeHtml(fallback.treatment)}</p>`;
   }
   section.hidden = false;
+  return true;
 }
 
 function makeSection(title, content) {

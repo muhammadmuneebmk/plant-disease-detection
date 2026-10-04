@@ -63,23 +63,44 @@
         </div>
 
         <section id="result-detect" class="result" hidden>
-          <div class="result-row">
-            <div class="result-block">
-              <span class="result-label">Crop</span>
-              <span class="result-value" id="cropName">-</span>
-              <div class="meter"><div class="meter-fill" id="cropMeter"></div></div>
-              <span class="meter-label" id="cropProb">-</span>
-            </div>
-            <div class="result-block">
-              <span class="result-label">Diagnosis</span>
-              <span class="result-value" id="diseaseName">-</span>
-              <div class="meter"><div class="meter-fill" id="diseaseMeter"></div></div>
-              <span class="meter-label" id="diseaseProb">-</span>
-            </div>
+          <div class="result-tabs" id="result-tabs" role="tablist" hidden>
+            <button type="button" class="result-tab" role="tab" data-rtab="plantid">🌿 plant.id result</button>
+            <button type="button" class="result-tab" role="tab" data-rtab="gemini">🤖 Gemini opinion</button>
           </div>
 
-          <div id="extraDetails"></div>
-          <div id="fallbackSection" class="fallback-section" hidden></div>
+          <div id="rtab-plantid" role="tabpanel">
+            <div class="result-row">
+              <div class="result-block">
+                <span class="result-label">Crop</span>
+                <span class="result-value" id="cropName">-</span>
+                <div class="meter"><div class="meter-fill" id="cropMeter"></div></div>
+                <span class="meter-label" id="cropProb">-</span>
+              </div>
+              <div class="result-block">
+                <span class="result-label">Diagnosis</span>
+                <span class="result-value" id="diseaseName">-</span>
+                <div class="meter" id="diseaseMeterWrap"><div class="meter-fill" id="diseaseMeter"></div></div>
+                <span class="meter-label" id="diseaseProb">-</span>
+              </div>
+            </div>
+
+            <div class="low-confidence" id="lowConfidence" hidden>
+              <h4>⚠️ plant.id's confidence is low</h4>
+              <p id="lowConfidenceText"></p>
+              <button type="button" class="switch-tab-btn" id="goto-gemini" data-goto="gemini">See Gemini's second opinion →</button>
+              <details class="raw-guesses">
+                <summary>Show plant.id's low-confidence guesses anyway</summary>
+                <div id="rawGuesses"></div>
+              </details>
+            </div>
+
+            <div id="extraDetails"></div>
+          </div>
+
+          <div id="rtab-gemini" role="tabpanel" hidden>
+            <div id="fallbackSection" class="fallback-section" hidden></div>
+            <button type="button" class="switch-tab-btn secondary" data-goto="plantid">← View plant.id's result</button>
+          </div>
         </section>
       </div>
     </section>

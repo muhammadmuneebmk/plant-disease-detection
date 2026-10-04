@@ -399,6 +399,76 @@ button#btn-detect:disabled, button#btn-finder:disabled {
 #extraDetails h4, #finderDetails h4 { margin: 0 0 4px; font-size: 0.9rem; color: var(--accent); }
 #extraDetails p, #finderDetails p { margin: 0; font-size: 0.9rem; color: var(--text-dim); line-height: 1.5; }
 
+/* ---------- result tabs (plant.id vs Gemini) ---------- */
+.result-tabs {
+  display: flex;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  padding: 4px;
+  border-radius: 12px;
+  margin-bottom: 18px;
+}
+
+.result-tabs[hidden] { display: none; }
+
+.result-tab {
+  flex: 1;
+  border: none;
+  background: transparent;
+  color: var(--text-dim);
+  font-size: 0.88rem;
+  font-weight: 600;
+  padding: 10px 8px;
+  border-radius: 9px;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.result-tab:hover { color: var(--text); }
+
+.result-tab.active {
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  color: #06240f;
+}
+
+.low-confidence {
+  margin-top: 16px;
+  padding: 16px;
+  border-radius: 12px;
+  background: rgba(250, 204, 21, 0.08);
+  border: 1px solid rgba(250, 204, 21, 0.35);
+}
+
+.low-confidence[hidden] { display: none; }
+.low-confidence h4 { margin: 0 0 6px; font-size: 0.95rem; color: #facc15; }
+.low-confidence > p { margin: 0 0 12px; font-size: 0.88rem; color: var(--text-dim); line-height: 1.5; }
+
+.switch-tab-btn {
+  border: none;
+  border-radius: 10px;
+  padding: 10px 14px;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  color: #06240f;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.switch-tab-btn[hidden] { display: none; }
+
+.switch-tab-btn.secondary {
+  margin-top: 14px;
+  background: transparent;
+  color: var(--accent);
+  border: 1px solid rgba(74, 222, 128, 0.4);
+}
+
+.raw-guesses { margin-top: 14px; }
+.raw-guesses summary { cursor: pointer; font-size: 0.82rem; color: var(--text-dim); }
+#rawGuesses div { margin-top: 10px; }
+#rawGuesses h4 { margin: 0 0 4px; font-size: 0.85rem; color: var(--text); }
+#rawGuesses p { margin: 0; font-size: 0.85rem; color: var(--text-dim); line-height: 1.5; }
+
 .fallback-section {
   margin-top: 16px;
   padding: 14px;
