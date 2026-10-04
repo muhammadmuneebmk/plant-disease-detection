@@ -88,16 +88,23 @@
       <div class="panel upload-panel">
         <span class="badge">🔍 AI Agent</span>
         <h1>Plant Finder</h1>
-        <p class="subtitle">Upload a clear photo to find out what plant it is — species, care tips, and more.</p>
+        <p class="subtitle">Upload exactly 3 photos of the <strong>same plant</strong> to find out what it is:</p>
+        <ol class="photo-tips">
+          <li>Close-up of a leaf</li>
+          <li>A flower, fruit, or boll</li>
+          <li>The whole plant</li>
+        </ol>
+        <p class="photo-hint">Different parts of the plant help tell similar-looking species apart. Use daylight and keep each part in focus.</p>
 
         <label class="upload-box" id="box-finder">
           <input type="file" id="input-finder" accept="image/*" multiple hidden />
           <div class="upload-prompt">
             <span class="upload-icon">🌱</span>
-            <span class="upload-text">Drag & drop a photo here</span>
-            <span class="upload-subtext">or click to browse (up to 3)</span>
+            <span class="upload-text">Drag & drop photos here</span>
+            <span class="upload-subtext">or click to browse (3 required)</span>
           </div>
         </label>
+        <div class="photo-count" id="count-finder">0 / 3 photos added</div>
         <div class="thumb-row" id="thumbs-finder"></div>
 
         <button id="btn-finder" disabled>
@@ -112,7 +119,7 @@
       <div class="panel result-panel">
         <div class="empty-state" id="empty-finder">
           <span class="empty-icon">🌿</span>
-          <p>Upload a photo to identify the plant here.</p>
+          <p>Upload 3 photos to identify the plant here.</p>
         </div>
 
         <section id="result-finder" class="result" hidden>

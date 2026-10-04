@@ -178,7 +178,14 @@ function runAgentSteps(container, steps) {
 const btnDetect = document.getElementById("btn-detect");
 btnDetect.querySelector(".btn-label").dataset.idle = "Analyze";
 
-const countDetect = document.getElementById("count-detect");
+function updatePhotoCount(el, count) {
+  const remaining = MAX_IMAGES - count;
+  el.textContent =
+    remaining > 0
+      ? `${count} / ${MAX_IMAGES} photos added. Add ${remaining} more of the same plant.`
+      : `${count} / ${MAX_IMAGES} photos added. Ready.`;
+  el.classList.toggle("complete", remaining === 0);
+}
 
 const detectUploader = createUploader({
   boxId: "box-detect",
@@ -186,14 +193,7 @@ const detectUploader = createUploader({
   thumbRowId: "thumbs-detect",
   btnId: "btn-detect",
   minFiles: MAX_IMAGES,
-  onCountChange: (count) => {
-    const remaining = MAX_IMAGES - count;
-    countDetect.textContent =
-      remaining > 0
-        ? `${count} / ${MAX_IMAGES} photos added. Add ${remaining} more of the same plant.`
-        : `${count} / ${MAX_IMAGES} photos added. Ready to analyze.`;
-    countDetect.classList.toggle("complete", remaining === 0);
-  },
+  onCountChange: (count) => updatePhotoCount(document.getElementById("count-detect"), count),
 });
 
 btnDetect.addEventListener("click", async () => {
@@ -348,18 +348,20 @@ const finderUploader = createUploader({
   inputId: "input-finder",
   thumbRowId: "thumbs-finder",
   btnId: "btn-finder",
+  minFiles: MAX_IMAGES,
+  onCountChange: (count) => updatePhotoCount(document.getElementById("count-finder"), count),
 });
 
 btnFinder.addEventListener("click", async () => {
   const files = finderUploader.getFiles();
-  if (!files.length) return;
+  if (files.length !== MAX_IMAGES) return;
 
   setLoading(btnFinder, true);
   document.getElementById("status-finder").textContent = "";
   document.getElementById("result-finder").hidden = true;
 
   const finishSteps = runAgentSteps(document.getElementById("steps-finder"), [
-    "Reading image",
+    "Reading 3 photos",
     "Matching plant species",
     "Gathering plant info",
   ]);
@@ -388,7 +390,7 @@ btnFinder.addEventListener("click", async () => {
 function renderFinderResult(data) {
   const plant = data.plant;
   if (!plant) {
-    document.getElementById("status-finder").textContent = "No plant could be identified in this photo.";
+    document.getElementById("status-finder").textContent = "No plant could be identified in these photos.";
     return;
   }
 
@@ -397,7 +399,9 @@ function renderFinderResult(data) {
   const details = plant.details || {};
 
   document.getElementById("finderName").textContent = plant.name || "Unknown";
-  setMeter(document.getElementById("finderMeter"), document.getElementById("finderProb"), plant.probability);
+  const finderProb = document.getElementById("finderProb");
+  setMeter(document.getElementById("finderMeter"), finderProb, plant.probability);
+  if (plant.probability != null && plant.probability < 0.5) finderProb.textContent += " · low confidence";
 
   const img = document.getElementById("finderImg");
   const imageUrl = typeof details.image === "string" ? details.image : details.image && details.image.value;

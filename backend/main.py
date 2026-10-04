@@ -134,6 +134,14 @@ async def read_images(files: list[UploadFile]) -> list[tuple[str, str]]:
     return [(base64.b64encode(await f.read()).decode("utf-8"), f.content_type or "image/jpeg") for f in files]
 
 
+def require_photos(files: list[UploadFile]) -> None:
+    if len(files) != REQUIRED_PHOTOS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Please upload exactly {REQUIRED_PHOTOS} photos of the same plant (you sent {len(files)}).",
+        )
+
+
 def call_kindwise(params: dict, body: dict) -> dict:
     if not KINDWISE_API_KEYS:
         raise HTTPException(status_code=500, detail="KINDWISE_API_KEY is not set on the server")
@@ -157,12 +165,7 @@ def call_kindwise(params: dict, body: dict) -> dict:
 
 @app.post("/predict")
 async def predict(files: list[UploadFile] = File(...)):
-    if len(files) != REQUIRED_PHOTOS:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Please upload exactly {REQUIRED_PHOTOS} photos of the same plant (you sent {len(files)}).",
-        )
-
+    require_photos(files)
     images = await read_images(files)
     result = call_kindwise(
         {"details": DISEASE_DETAILS, "language": "en"},
@@ -214,6 +217,7 @@ async def predict(files: list[UploadFile] = File(...)):
 
 @app.post("/identify")
 async def identify(files: list[UploadFile] = File(...)):
+    require_photos(files)
     images = await read_images(files)
     result = call_kindwise({"details": FINDER_DETAILS, "language": "en"}, {"images": [b64 for b64, _ in images]})
     suggestions = result.get("classification", {}).get("suggestions", [])
