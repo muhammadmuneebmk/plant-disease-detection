@@ -236,6 +236,13 @@ btnDetect.addEventListener("click", async () => {
   }
 });
 
+// "Gossypium hirsutum" + "upland cotton" -> "Gossypium hirsutum (Upland cotton)"
+function withCommonName(scientific, common) {
+  if (!scientific) return "Unknown";
+  if (!common || common.toLowerCase() === scientific.toLowerCase()) return scientific;
+  return `${scientific} (${common.charAt(0).toUpperCase()}${common.slice(1)})`;
+}
+
 function displayDiseaseName(name) {
   const commonName = toCommonName(name);
   return commonName ? `${commonName} (${name})` : name;
@@ -247,7 +254,7 @@ function renderDetectResult(data) {
   const crop = data.crop || {};
 
   const cropProb = document.getElementById("cropProb");
-  document.getElementById("cropName").textContent = crop.name || "Unknown";
+  document.getElementById("cropName").textContent = withCommonName(crop.name, crop.common_name);
   setMeter(document.getElementById("cropMeter"), cropProb, crop.probability);
   if (crop.probability != null && crop.probability < 0.5) cropProb.textContent += " · low confidence";
 
@@ -412,7 +419,7 @@ function renderFinderResult(data) {
   const resultEl = document.getElementById("result-finder");
   const details = plant.details || {};
 
-  document.getElementById("finderName").textContent = plant.name || "Unknown";
+  document.getElementById("finderName").textContent = withCommonName(plant.name, (details.common_names || [])[0]);
   const finderProb = document.getElementById("finderProb");
   setMeter(document.getElementById("finderMeter"), finderProb, plant.probability);
   if (plant.probability != null && plant.probability < 0.5) finderProb.textContent += " · low confidence";

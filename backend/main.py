@@ -199,7 +199,11 @@ async def predict(files: list[UploadFile] = File(...)):
     return {
         "verdict": verdict,
         "health_probability": health.get("probability"),
-        "crop": {"name": top_crop.get("name"), "probability": top_crop.get("probability")},
+        "crop": {
+            "name": top_crop.get("name"),
+            "common_name": ((top_crop.get("details") or {}).get("common_names") or [None])[0],
+            "probability": top_crop.get("probability"),
+        },
         "disease": {
             "name": top_disease.get("name"),
             "probability": top_disease.get("probability"),
