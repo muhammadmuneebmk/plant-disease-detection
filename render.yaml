@@ -9,6 +9,8 @@ services:
     envVars:
       - key: KINDWISE_API_KEY
         sync: false
+      - key: KINDWISE_API_KEY_BACKUP
+        sync: false
       - key: FALLBACK_PROVIDER
         value: gemini
       - key: CONFIDENCE_THRESHOLD

@@ -14,8 +14,10 @@ def _clean_env(name: str) -> str | None:
     return value.strip() if value else value
 
 
-KINDWISE_API_KEY = _clean_env("KINDWISE_API_KEY")
+KINDWISE_API_KEYS = [k for k in (_clean_env("KINDWISE_API_KEY"), _clean_env("KINDWISE_API_KEY_BACKUP")) if k]
 KINDWISE_URL = "https://plant.id/api/v3/identification"
+# plant.id returns 429 when a key is out of credits and 401 when it's invalid.
+KEY_EXHAUSTED_STATUSES = {401, 429}
 DISEASE_DETAILS = "description,treatment,common_names,url,classification"
 FINDER_DETAILS = (
     "common_names,url,description,watering,best_watering,best_light_condition,"
@@ -132,11 +134,29 @@ async def read_images(files: list[UploadFile]) -> list[tuple[str, str]]:
     return [(base64.b64encode(await f.read()).decode("utf-8"), f.content_type or "image/jpeg") for f in files]
 
 
-@app.post("/predict")
-async def predict(files: list[UploadFile] = File(...)):
-    if not KINDWISE_API_KEY:
+def call_kindwise(params: dict, body: dict) -> dict:
+    if not KINDWISE_API_KEYS:
         raise HTTPException(status_code=500, detail="KINDWISE_API_KEY is not set on the server")
 
+    for i, key in enumerate(KINDWISE_API_KEYS):
+        try:
+            response = requests.post(
+                KINDWISE_URL,
+                params=params,
+                headers={"Api-Key": key, "Content-Type": "application/json"},
+                json=body,
+                timeout=30,
+            )
+            if response.status_code in KEY_EXHAUSTED_STATUSES and i < len(KINDWISE_API_KEYS) - 1:
+                continue
+            response.raise_for_status()
+        except requests.RequestException as exc:
+            raise HTTPException(status_code=502, detail=f"Kindwise API request failed: {exc}") from exc
+        return response.json().get("result", {})
+
+
+@app.post("/predict")
+async def predict(files: list[UploadFile] = File(...)):
     if len(files) != REQUIRED_PHOTOS:
         raise HTTPException(
             status_code=400,
@@ -144,20 +164,10 @@ async def predict(files: list[UploadFile] = File(...)):
         )
 
     images = await read_images(files)
-
-    try:
-        response = requests.post(
-            KINDWISE_URL,
-            params={"details": DISEASE_DETAILS, "language": "en"},
-            headers={"Api-Key": KINDWISE_API_KEY, "Content-Type": "application/json"},
-            json={"images": [b64 for b64, _ in images], "health": "all"},
-            timeout=30,
-        )
-        response.raise_for_status()
-    except requests.RequestException as exc:
-        raise HTTPException(status_code=502, detail=f"Kindwise API request failed: {exc}") from exc
-
-    result = response.json().get("result", {})
+    result = call_kindwise(
+        {"details": DISEASE_DETAILS, "language": "en"},
+        {"images": [b64 for b64, _ in images], "health": "all"},
+    )
 
     crop_suggestions = result.get("classification", {}).get("suggestions", [])
     disease_suggestions = result.get("disease", {}).get("suggestions", [])
@@ -204,25 +214,8 @@ async def predict(files: list[UploadFile] = File(...)):
 
 @app.post("/identify")
 async def identify(files: list[UploadFile] = File(...)):
-    if not KINDWISE_API_KEY:
-        raise HTTPException(status_code=500, detail="KINDWISE_API_KEY is not set on the server")
-
     images = await read_images(files)
-
-    try:
-        response = requests.post(
-            KINDWISE_URL,
-            params={"details": FINDER_DETAILS, "language": "en"},
-            headers={"Api-Key": KINDWISE_API_KEY, "Content-Type": "application/json"},
-            json={"images": [b64 for b64, _ in images]},
-            timeout=30,
-        )
-        response.raise_for_status()
-    except requests.RequestException as exc:
-        raise HTTPException(status_code=502, detail=f"Kindwise API request failed: {exc}") from exc
-
-    data = response.json()
-    result = data.get("result", {})
+    result = call_kindwise({"details": FINDER_DETAILS, "language": "en"}, {"images": [b64 for b64, _ in images]})
     suggestions = result.get("classification", {}).get("suggestions", [])
     top = suggestions[0] if suggestions else None
 
