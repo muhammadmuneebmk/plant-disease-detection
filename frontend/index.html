@@ -34,6 +34,7 @@
           <li>The whole plant</li>
         </ol>
         <p class="photo-hint">Use daylight, keep the leaf in focus, and keep hands and feet out of the shot.</p>
+        <button type="button" class="guide-link" data-guide="detect">📸 See photo guide with examples</button>
 
         <label class="upload-box" id="box-detect">
           <input type="file" id="input-detect" accept="image/*" multiple hidden />
@@ -95,6 +96,7 @@
           <li>The whole plant</li>
         </ol>
         <p class="photo-hint">Different parts of the plant help tell similar-looking species apart. Use daylight and keep each part in focus.</p>
+        <button type="button" class="guide-link" data-guide="finder">📸 See photo guide with examples</button>
 
         <label class="upload-box" id="box-finder">
           <input type="file" id="input-finder" accept="image/*" multiple hidden />
@@ -137,6 +139,36 @@
       </div>
     </section>
   </main>
+
+  <div class="modal-backdrop" id="guide-modal" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="guide-title">
+      <button type="button" class="modal-close" aria-label="Close photo guide">✕</button>
+      <h2 id="guide-title"></h2>
+      <p class="modal-sub" id="guide-sub"></p>
+      <div class="guide-cards" id="guide-cards"></div>
+      <div class="guide-rules">
+        <div>
+          <h4>✅ Do</h4>
+          <ul>
+            <li>Shoot in daylight</li>
+            <li>Tap the screen to focus before taking the photo</li>
+            <li>Use the same plant in all 3 photos</li>
+            <li>Keep one main subject per photo</li>
+          </ul>
+        </div>
+        <div>
+          <h4>❌ Avoid</h4>
+          <ul>
+            <li>Hands, feet, or clothes covering the plant</li>
+            <li>Dark, blurry, or very zoomed-out shots</li>
+            <li>Mixing photos of different plants</li>
+            <li>Screenshots or photos of a screen</li>
+          </ul>
+        </div>
+      </div>
+      <button type="button" class="modal-ok">Got it</button>
+    </div>
+  </div>
 
   <script src="script.js"></script>
 </body>

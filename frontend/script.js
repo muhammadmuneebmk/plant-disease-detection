@@ -432,3 +432,135 @@ function renderFinderResult(data) {
 
   resultEl.hidden = false;
 }
+
+// ================= Photo guide modal =================
+const PHONE_FRAME =
+  '<rect x="18" y="6" width="84" height="108" rx="12" fill="#0f1a12" stroke="#4ade80" stroke-opacity="0.5" stroke-width="2"/>';
+
+const LEAF_VEINS =
+  '<path d="M60 24V98" stroke="#14532d" stroke-width="2"/>' +
+  '<path d="M60 45L44 36M60 45L76 36M60 62L40 52M60 62L80 52M60 79L46 71M60 79L74 71" stroke="#14532d" stroke-width="1.5" fill="none"/>';
+
+const ILLUSTRATIONS = {
+  diseasedLeaf:
+    PHONE_FRAME +
+    '<path d="M60 16C90 30 96 72 60 104C24 72 30 30 60 16Z" fill="#22c55e"/>' +
+    LEAF_VEINS +
+    '<circle cx="48" cy="44" r="5" fill="#e5e7eb" opacity="0.85"/><circle cx="70" cy="58" r="6" fill="#e5e7eb" opacity="0.85"/>' +
+    '<circle cx="52" cy="74" r="4" fill="#a16207"/><circle cx="72" cy="82" r="3" fill="#a16207"/>',
+  leafUnderside:
+    PHONE_FRAME +
+    '<path d="M60 16C90 30 96 72 60 104C24 72 30 30 60 16Z" fill="#86efac"/>' +
+    LEAF_VEINS +
+    '<circle cx="45" cy="56" r="2.5" fill="#fef3c7"/><circle cx="50" cy="60" r="2.5" fill="#fef3c7"/><circle cx="74" cy="66" r="2.5" fill="#fef3c7"/>' +
+    '<path d="M86 22a10 10 0 1 1-14 3" stroke="#facc15" stroke-width="2.5" fill="none"/><path d="M70 20l2 6 6-2" stroke="#facc15" stroke-width="2.5" fill="none"/>',
+  healthyLeaf:
+    PHONE_FRAME + '<path d="M60 16C90 30 96 72 60 104C24 72 30 30 60 16Z" fill="#22c55e"/>' + LEAF_VEINS,
+  flowerOrBoll:
+    PHONE_FRAME +
+    '<path d="M60 104V64" stroke="#16a34a" stroke-width="3"/>' +
+    '<circle cx="60" cy="38" r="11" fill="#fef3c7"/><circle cx="71.4" cy="46.3" r="11" fill="#fef3c7"/>' +
+    '<circle cx="67.1" cy="59.7" r="11" fill="#fef3c7"/><circle cx="52.9" cy="59.7" r="11" fill="#fef3c7"/>' +
+    '<circle cx="48.6" cy="46.3" r="11" fill="#fef3c7"/><circle cx="60" cy="50" r="6" fill="#facc15"/>' +
+    '<circle cx="82" cy="90" r="10" fill="#4ade80"/><path d="M82 80V100M73 86L91 94" stroke="#15803d" stroke-width="1.5"/>',
+  wholePlant:
+    PHONE_FRAME +
+    '<circle cx="88" cy="22" r="6" fill="#facc15"/>' +
+    '<line x1="26" y1="100" x2="94" y2="100" stroke="#a16207" stroke-width="3"/>' +
+    '<path d="M60 100V38" stroke="#16a34a" stroke-width="3"/>' +
+    '<ellipse cx="46" cy="82" rx="13" ry="6" transform="rotate(-25 46 82)" fill="#22c55e"/>' +
+    '<ellipse cx="74" cy="74" rx="13" ry="6" transform="rotate(25 74 74)" fill="#22c55e"/>' +
+    '<ellipse cx="47" cy="60" rx="11" ry="5.5" transform="rotate(-25 47 60)" fill="#22c55e"/>' +
+    '<ellipse cx="73" cy="52" rx="11" ry="5.5" transform="rotate(25 73 52)" fill="#22c55e"/>' +
+    '<ellipse cx="60" cy="36" rx="7" ry="10" fill="#4ade80"/>',
+};
+
+const GUIDES = {
+  detect: {
+    title: "How to take the 3 photos for disease detection",
+    sub: "All 3 photos must be of the same plant. Each one shows the AI something different.",
+    cards: [
+      {
+        art: "diseasedLeaf",
+        title: "Affected leaf, close up",
+        text: "Fill the frame with one leaf so spots, patches, or holes are clearly visible.",
+      },
+      {
+        art: "leafUnderside",
+        title: "Another angle",
+        text: "A second affected leaf, or flip the same leaf over. Many pests hide underneath.",
+      },
+      {
+        art: "wholePlant",
+        title: "Whole plant",
+        text: "Step back so the full plant fits. This shows whether the problem is spreading.",
+      },
+    ],
+  },
+  finder: {
+    title: "How to take the 3 photos for Plant Finder",
+    sub: "All 3 photos must be of the same plant. Different parts help tell similar-looking species apart.",
+    cards: [
+      {
+        art: "healthyLeaf",
+        title: "Leaf, close up",
+        text: "One flat leaf filling the frame. Its shape, edges, and veins are key clues.",
+      },
+      {
+        art: "flowerOrBoll",
+        title: "Flower, fruit, or boll",
+        text: "The strongest clue for naming a plant. If it has none yet, photograph the stem instead.",
+      },
+      {
+        art: "wholePlant",
+        title: "Whole plant",
+        text: "Shows the plant's height, shape, and how its leaves are arranged.",
+      },
+    ],
+  },
+};
+
+const guideModal = document.getElementById("guide-modal");
+let guideTrigger = null;
+
+function openGuide(mode, trigger) {
+  const guide = GUIDES[mode];
+  document.getElementById("guide-title").textContent = guide.title;
+  document.getElementById("guide-sub").textContent = guide.sub;
+  document.getElementById("guide-cards").innerHTML = guide.cards
+    .map(
+      (card, i) => `
+      <div class="guide-card">
+        <svg viewBox="0 0 120 120" aria-hidden="true">${ILLUSTRATIONS[card.art]}</svg>
+        <div>
+          <span class="step">Photo ${i + 1}</span>
+          <h4>${card.title}</h4>
+          <p>${card.text}</p>
+        </div>
+      </div>`
+    )
+    .join("");
+
+  guideTrigger = trigger;
+  guideModal.hidden = false;
+  document.body.classList.add("modal-open");
+  guideModal.querySelector(".modal-close").focus();
+}
+
+function closeGuide() {
+  guideModal.hidden = true;
+  document.body.classList.remove("modal-open");
+  if (guideTrigger) guideTrigger.focus();
+}
+
+document.querySelectorAll(".guide-link").forEach((btn) => {
+  btn.addEventListener("click", () => openGuide(btn.dataset.guide, btn));
+});
+guideModal.querySelector(".modal-close").addEventListener("click", closeGuide);
+guideModal.querySelector(".modal-ok").addEventListener("click", closeGuide);
+guideModal.addEventListener("click", (e) => {
+  if (e.target === guideModal) closeGuide();
+});
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && !guideModal.hidden) closeGuide();
+});
