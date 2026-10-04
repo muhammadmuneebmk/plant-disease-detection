@@ -309,6 +309,7 @@ function scrollToResultOnMobile(el) {
 function renderFallback(fallback) {
   const section = document.getElementById("fallbackSection");
   section.innerHTML = "";
+  document.querySelectorAll("#thumbs-detect .thumb").forEach((t) => t.classList.remove("flagged"));
   if (!fallback || !fallback.diagnosis) {
     section.hidden = true;
     return;
@@ -323,6 +324,13 @@ function renderFallback(fallback) {
   section.innerHTML = `<h4>🤖 ${escapeHtml(heading)}</h4>`;
   if (fallback.symptoms) {
     section.innerHTML += `<p><strong>What it sees:</strong> ${escapeHtml(fallback.symptoms)}</p>`;
+  }
+  const photos = (fallback.affected_photos || []).filter(Number.isInteger);
+  if (photos.length) {
+    const label = uncertain ? "Possible problem in" : "Seen in";
+    section.innerHTML += `<p><strong>${label}:</strong> photo ${photos.join(", ")} (outlined in red in your uploads)</p>`;
+    const thumbs = document.querySelectorAll("#thumbs-detect .thumb");
+    photos.forEach((n) => thumbs[n - 1] && thumbs[n - 1].classList.add("flagged"));
   }
   if (!uncertain && fallback.treatment) {
     section.innerHTML += `<p><strong>Suggested action:</strong> ${escapeHtml(fallback.treatment)}</p>`;
@@ -502,22 +510,22 @@ const ILLUSTRATIONS = {
 const GUIDES = {
   detect: {
     title: "How to take your photos for disease detection",
-    sub: "Take at least these 3 photos of the same plant (up to 5 in total). Each one shows the AI something different.",
+    sub: "Take at least these 3 photos of the same plant (up to 5 in total). Every photo should show the problem: the AI scores all photos together, so healthy-looking ones can hide it.",
     cards: [
       {
         art: "diseasedLeaf",
-        title: "Affected leaf, close up",
+        title: "Affected leaf, top side",
         text: "Fill the frame with one leaf so spots, patches, or holes are clearly visible.",
       },
       {
         art: "leafUnderside",
-        title: "Another angle",
-        text: "A second affected leaf, or flip the same leaf over. Many pests hide underneath.",
+        title: "Underside of the leaf",
+        text: "Flip the same leaf over, or use a second affected leaf. Many pests and fungi show up underneath.",
       },
       {
         art: "wholePlant",
-        title: "Whole plant",
-        text: "Step back so the full plant fits. This shows whether the problem is spreading.",
+        title: "Affected branch",
+        text: "Step back a little so several affected leaves are in view. This shows how far it has spread.",
       },
     ],
   },

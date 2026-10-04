@@ -51,7 +51,7 @@ Open `frontend/index.html` directly in a browser, or serve it with `python -m ht
 1. Go to [railway.app](https://railway.app), sign in with GitHub. You get $5 free credit for 30 days, no card needed — plenty for a small demo app.
 2. **New Project** → **Deploy from GitHub repo** → select `plant-disease-detection`.
 3. In the service settings, set **Root Directory** to `backend` (it's a monorepo). Railway reads `backend/Procfile` to know how to start the app.
-4. Under **Variables**, add: `KINDWISE_API_KEY`, `KINDWISE_API_KEY_BACKUP` (optional, used automatically when the main key runs out of credits), `FALLBACK_PROVIDER=gemini`, `CONFIDENCE_THRESHOLD=0.5`, `GEMINI_API_KEY`, `GEMINI_MODEL=gemini-2.5-flash` (values from your local `.env`).
+4. Under **Variables**, add: `KINDWISE_API_KEY`, `KINDWISE_API_KEY_BACKUP` (optional, used automatically when the main key runs out of credits), `FALLBACK_PROVIDER=gemini`, `CONFIDENCE_THRESHOLD=0.5`, `GEMINI_API_KEY`, `GEMINI_MODEL=gemini-3.5-flash`, `GEMINI_BACKUP_MODEL=gemini-3.5-flash-lite` (values from your local `.env`). Gemini's free tier allows only about 20 requests per day per model; the backup model has its own quota and is used automatically when the main one runs out.
 5. Under **Settings → Networking**, click **Generate Domain** to get a public URL like `https://plant-disease-detection-backend.up.railway.app`.
 6. Note: after the 30-day/$5 trial runs out, Railway pauses the app unless you add a card — fine for demo/viva purposes, revisit later if you need it long-term.
 
