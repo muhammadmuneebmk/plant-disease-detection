@@ -35,7 +35,8 @@ OPENAI_API_KEY = _clean_env("OPENAI_API_KEY")
 OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
 OPENAI_URL = "https://api.openai.com/v1/chat/completions"
 
-REQUIRED_PHOTOS = 3
+MIN_PHOTOS = 3
+MAX_PHOTOS = 5  # plant.id accepts up to 5 images per identification
 
 FALLBACK_PROMPT = (
     "You are a plant pathologist. These {count} photos all show the same plant{crop_hint}. "
@@ -135,10 +136,10 @@ async def read_images(files: list[UploadFile]) -> list[tuple[str, str]]:
 
 
 def require_photos(files: list[UploadFile]) -> None:
-    if len(files) != REQUIRED_PHOTOS:
+    if not MIN_PHOTOS <= len(files) <= MAX_PHOTOS:
         raise HTTPException(
             status_code=400,
-            detail=f"Please upload exactly {REQUIRED_PHOTOS} photos of the same plant (you sent {len(files)}).",
+            detail=f"Please upload {MIN_PHOTOS} to {MAX_PHOTOS} photos of the same plant (you sent {len(files)}).",
         )
 
 

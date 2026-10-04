@@ -2,7 +2,8 @@
 const LIVE_BACKEND_URL = "https://plant-disease-detection-backend-production-78e7.up.railway.app";
 const IS_LOCAL = location.protocol === "file:" || ["localhost", "127.0.0.1"].includes(location.hostname);
 const API_BASE = IS_LOCAL ? "http://localhost:8000" : LIVE_BACKEND_URL;
-const MAX_IMAGES = 3;
+const MIN_IMAGES = 3;
+const MAX_IMAGES = 5;
 
 // ---------- tab switching ----------
 document.querySelectorAll(".nav-tab").forEach((tab) => {
@@ -179,12 +180,16 @@ const btnDetect = document.getElementById("btn-detect");
 btnDetect.querySelector(".btn-label").dataset.idle = "Analyze";
 
 function updatePhotoCount(el, count) {
-  const remaining = MAX_IMAGES - count;
-  el.textContent =
-    remaining > 0
-      ? `${count} / ${MAX_IMAGES} photos added. Add ${remaining} more of the same plant.`
-      : `${count} / ${MAX_IMAGES} photos added. Ready.`;
-  el.classList.toggle("complete", remaining === 0);
+  const ready = count >= MIN_IMAGES;
+  if (!ready) {
+    el.textContent = `${count} photo${count === 1 ? "" : "s"} added. Add ${MIN_IMAGES - count} more of the same plant (minimum ${MIN_IMAGES}).`;
+  } else if (count < MAX_IMAGES) {
+    const extra = MAX_IMAGES - count;
+    el.textContent = `${count} photos added. Ready. You can add ${extra} more angle${extra === 1 ? "" : "s"} if you like.`;
+  } else {
+    el.textContent = `${count} photos added. Ready (maximum reached).`;
+  }
+  el.classList.toggle("complete", ready);
 }
 
 const detectUploader = createUploader({
@@ -192,20 +197,20 @@ const detectUploader = createUploader({
   inputId: "input-detect",
   thumbRowId: "thumbs-detect",
   btnId: "btn-detect",
-  minFiles: MAX_IMAGES,
+  minFiles: MIN_IMAGES,
   onCountChange: (count) => updatePhotoCount(document.getElementById("count-detect"), count),
 });
 
 btnDetect.addEventListener("click", async () => {
   const files = detectUploader.getFiles();
-  if (files.length !== MAX_IMAGES) return;
+  if (files.length < MIN_IMAGES) return;
 
   setLoading(btnDetect, true);
   document.getElementById("status-detect").textContent = "";
   document.getElementById("result-detect").hidden = true;
 
   const finishSteps = runAgentSteps(document.getElementById("steps-detect"), [
-    "Reading 3 photos",
+    `Reading ${files.length} photos`,
     "Consulting plant.id model",
     "Checking confidence",
   ]);
@@ -256,7 +261,7 @@ function renderDetectResult(data) {
     diseaseName.textContent = "Healthy";
     setMeter(diseaseMeter, diseaseProb, data.health_probability);
     if (data.health_probability != null) diseaseProb.textContent += " sure it's healthy";
-    extraDetails.appendChild(makeSection("Result", "No disease was detected in these 3 photos."));
+    extraDetails.appendChild(makeSection("Result", "No disease was detected in these photos."));
   } else if (data.verdict === "diseased") {
     const disease = data.disease;
     const details = disease.details || {};
@@ -357,20 +362,20 @@ const finderUploader = createUploader({
   inputId: "input-finder",
   thumbRowId: "thumbs-finder",
   btnId: "btn-finder",
-  minFiles: MAX_IMAGES,
+  minFiles: MIN_IMAGES,
   onCountChange: (count) => updatePhotoCount(document.getElementById("count-finder"), count),
 });
 
 btnFinder.addEventListener("click", async () => {
   const files = finderUploader.getFiles();
-  if (files.length !== MAX_IMAGES) return;
+  if (files.length < MIN_IMAGES) return;
 
   setLoading(btnFinder, true);
   document.getElementById("status-finder").textContent = "";
   document.getElementById("result-finder").hidden = true;
 
   const finishSteps = runAgentSteps(document.getElementById("steps-finder"), [
-    "Reading 3 photos",
+    `Reading ${files.length} photos`,
     "Matching plant species",
     "Gathering plant info",
   ]);
@@ -487,8 +492,8 @@ const ILLUSTRATIONS = {
 
 const GUIDES = {
   detect: {
-    title: "How to take the 3 photos for disease detection",
-    sub: "All 3 photos must be of the same plant. Each one shows the AI something different.",
+    title: "How to take your photos for disease detection",
+    sub: "Take at least these 3 photos of the same plant (up to 5 in total). Each one shows the AI something different.",
     cards: [
       {
         art: "diseasedLeaf",
@@ -508,8 +513,8 @@ const GUIDES = {
     ],
   },
   finder: {
-    title: "How to take the 3 photos for Plant Finder",
-    sub: "All 3 photos must be of the same plant. Different parts help tell similar-looking species apart.",
+    title: "How to take your photos for Plant Finder",
+    sub: "Take at least these 3 photos of the same plant (up to 5 in total). Different parts help tell similar-looking species apart.",
     cards: [
       {
         art: "healthyLeaf",

@@ -27,7 +27,7 @@
       <div class="panel upload-panel">
         <span class="badge">🤖 AI Agent</span>
         <h1>Detect Disease</h1>
-        <p class="subtitle">Upload exactly 3 photos of the <strong>same plant</strong>:</p>
+        <p class="subtitle">Upload at least 3 photos (up to 5) of the <strong>same plant</strong>:</p>
         <ol class="photo-tips">
           <li>Close-up of the affected leaf (fill the frame)</li>
           <li>Another affected leaf, or the underside of the same leaf</li>
@@ -41,10 +41,10 @@
           <div class="upload-prompt">
             <span class="upload-icon">📷</span>
             <span class="upload-text"><span class="on-desktop">Drag & drop photos here</span><span class="on-touch">Tap to take or choose photos</span></span>
-            <span class="upload-subtext"><span class="on-desktop">or click to browse (3 required)</span><span class="on-touch">3 photos required</span></span>
+            <span class="upload-subtext"><span class="on-desktop">or click to browse (3 to 5 photos)</span><span class="on-touch">3 to 5 photos</span></span>
           </div>
         </label>
-        <div class="photo-count" id="count-detect">0 / 3 photos added</div>
+        <div class="photo-count" id="count-detect">0 photos added (minimum 3)</div>
         <div class="thumb-row" id="thumbs-detect"></div>
 
         <button id="btn-detect" disabled>
@@ -89,7 +89,7 @@
       <div class="panel upload-panel">
         <span class="badge">🔍 AI Agent</span>
         <h1>Plant Finder</h1>
-        <p class="subtitle">Upload exactly 3 photos of the <strong>same plant</strong> to find out what it is:</p>
+        <p class="subtitle">Upload at least 3 photos (up to 5) of the <strong>same plant</strong> to find out what it is:</p>
         <ol class="photo-tips">
           <li>Close-up of a leaf</li>
           <li>A flower, fruit, or boll</li>
@@ -103,10 +103,10 @@
           <div class="upload-prompt">
             <span class="upload-icon">🌱</span>
             <span class="upload-text"><span class="on-desktop">Drag & drop photos here</span><span class="on-touch">Tap to take or choose photos</span></span>
-            <span class="upload-subtext"><span class="on-desktop">or click to browse (3 required)</span><span class="on-touch">3 photos required</span></span>
+            <span class="upload-subtext"><span class="on-desktop">or click to browse (3 to 5 photos)</span><span class="on-touch">3 to 5 photos</span></span>
           </div>
         </label>
-        <div class="photo-count" id="count-finder">0 / 3 photos added</div>
+        <div class="photo-count" id="count-finder">0 photos added (minimum 3)</div>
         <div class="thumb-row" id="thumbs-finder"></div>
 
         <button id="btn-finder" disabled>
@@ -121,7 +121,7 @@
       <div class="panel result-panel">
         <div class="empty-state" id="empty-finder">
           <span class="empty-icon">🌿</span>
-          <p>Upload 3 photos to identify the plant here.</p>
+          <p>Upload 3 to 5 photos to identify the plant here.</p>
         </div>
 
         <section id="result-finder" class="result" hidden>
@@ -152,7 +152,7 @@
           <ul>
             <li>Shoot in daylight</li>
             <li>Tap the screen to focus before taking the photo</li>
-            <li>Use the same plant in all 3 photos</li>
+            <li>Use the same plant in every photo</li>
             <li>Keep one main subject per photo</li>
           </ul>
         </div>

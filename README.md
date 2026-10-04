@@ -37,9 +37,9 @@ pip install -r requirements.txt
 uvicorn main:app --reload --port 8000
 ```
 
-The API will be live at `http://localhost:8000`. Health check: `GET /`, disease detection: `POST /predict`, plant finder: `POST /identify` (both take multipart file uploads, field name `files`). Both require exactly 3 photos of the same plant: different parts of the plant (leaf, flower or fruit, whole plant) make both disease and species identification more reliable.
+The API will be live at `http://localhost:8000`. Health check: `GET /`, disease detection: `POST /predict`, plant finder: `POST /identify` (both take multipart file uploads, field name `files`). Both require 3 to 5 photos of the same plant (plant.id accepts up to 5 per check, and credits are charged per check, not per photo): different parts of the plant (leaf, flower or fruit, whole plant) make both disease and species identification more reliable.
 
-`/predict` returns a `verdict` of `healthy`, `diseased`, or `uncertain`. A disease is only named when plant.id's confidence is at or above `CONFIDENCE_THRESHOLD`. Lower-probability suggestions are near-noise and reorder between photo sets, so they are shown only as unreliable possibilities. In the `uncertain` case, Gemini/GPT-4o gets all 3 photos at temperature 0 and is allowed to answer "Uncertain" instead of guessing.
+`/predict` returns a `verdict` of `healthy`, `diseased`, or `uncertain`. A disease is only named when plant.id's confidence is at or above `CONFIDENCE_THRESHOLD`. Lower-probability suggestions are near-noise and reorder between photo sets, so they are shown only as unreliable possibilities. In the `uncertain` case, Gemini/GPT-4o gets all the photos at temperature 0 and is allowed to answer "Uncertain" instead of guessing.
 
 ## 3. Open the frontend
 
