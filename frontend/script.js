@@ -44,7 +44,7 @@ function toCommonName(name) {
   return COMMON_DISEASE_NAMES[name.trim().toLowerCase()] || null;
 }
 
-const FALLBACK_LABELS = { gemini: "Gemini", openai: "GPT-4o" };
+const FALLBACK_LABELS = { gemini: "Google Gemini", openai: "OpenAI GPT-4o" };
 
 function extractErrorMessage(err, status) {
   const detail = err && err.detail;
@@ -286,11 +286,18 @@ function renderDetectResult(data) {
     if (details.description) extraDetails.appendChild(makeSection("Description", details.description));
     if (details.treatment) extraDetails.appendChild(makeTreatmentSection(details.treatment));
   } else {
-    // Don't present plant.id's weak guesses as a result; point to Gemini instead.
-    diseaseName.textContent = "Low confidence";
-    meterWrap.hidden = true;
-    diseaseProb.hidden = true;
-    renderLowConfidence(data, hasSecondOpinion);
+    // Show plant.id's own top guess, but clearly marked as unreliable and pointing to Gemini.
+    const top = (data.candidates || [])[0];
+    if (top) {
+      diseaseName.textContent = displayDiseaseName(top.name, top.common_name);
+      setMeter(diseaseMeter, diseaseProb, top.probability);
+      diseaseProb.textContent += " · low confidence";
+    } else {
+      diseaseName.textContent = "No clear cause found";
+      meterWrap.hidden = true;
+      diseaseProb.hidden = true;
+    }
+    renderLowConfidence(data, hasSecondOpinion, extraDetails);
   }
 
   showResultTab(hasSecondOpinion ? "gemini" : "plantid");
@@ -298,25 +305,23 @@ function renderDetectResult(data) {
   scrollToResultOnMobile(resultEl);
 }
 
-function renderLowConfidence(data, hasSecondOpinion) {
+function renderLowConfidence(data, hasSecondOpinion, extraDetails) {
   document.getElementById("lowConfidence").hidden = false;
   document.getElementById("goto-gemini").hidden = !hasSecondOpinion;
   document.getElementById("lowConfidenceText").textContent = hasSecondOpinion
-    ? "plant.id isn't confident enough about these photos to give a reliable diagnosis. Please check Gemini's second opinion instead."
-    : "plant.id isn't confident enough about these photos to give a reliable diagnosis, and Gemini's second opinion isn't available right now (it may have reached its daily limit). Try again later, or retake clear daylight photos of the affected leaves.";
+    ? "The model isn't confident about these photos, so don't rely on this diagnosis alone. Please also check the AI Second Opinion."
+    : "The model isn't confident about these photos, so don't rely on this diagnosis alone. The AI Second Opinion isn't available right now (it may have reached its daily limit). Try again later, or retake clear daylight photos of the affected leaves.";
 
-  const raw = document.getElementById("rawGuesses");
-  raw.innerHTML = "";
-  raw.closest("details").open = false;
   if (data.health_probability != null) {
     const pct = Math.round((1 - data.health_probability) * 100);
-    raw.appendChild(makeSection("Health estimate", `${pct}% likely a problem, cause not confirmed.`));
+    extraDetails.appendChild(makeSection("Health estimate", `${pct}% likely a problem, cause not confirmed.`));
   }
-  if (data.candidates && data.candidates.length) {
-    const list = data.candidates
+  const others = (data.candidates || []).slice(1);
+  if (others.length) {
+    const list = others
       .map((c) => `${displayDiseaseName(c.name, c.common_name)}: ${Math.round(c.probability * 100)}%`)
       .join(", ");
-    raw.appendChild(makeSection("Possible causes it considered", `${list}. None of these is reliable enough to treat as a diagnosis.`));
+    extraDetails.appendChild(makeSection("Other possibilities", list));
   }
 }
 
@@ -355,13 +360,14 @@ function renderFallback(fallback) {
     return false;
   }
 
-  const label = FALLBACK_LABELS[fallback.provider] || fallback.provider;
   const uncertain = fallback.diagnosis.trim().toLowerCase() === "uncertain";
   const heading = uncertain
-    ? `${label} also can't tell from these photos`
-    : `${label} second opinion: ${fallback.diagnosis} · ${fallback.confidence} confidence`;
+    ? "Can't name the cause from these photos"
+    : `${fallback.diagnosis} · ${fallback.confidence} confidence`;
+  document.getElementById("secondOpinionSource").textContent =
+    `Source: ${FALLBACK_LABELS[fallback.provider] || fallback.provider}`;
 
-  section.innerHTML = `<h4>🤖 ${escapeHtml(heading)}</h4>`;
+  section.innerHTML = `<h4>🧠 ${escapeHtml(heading)}</h4>`;
   if (fallback.symptoms) {
     section.innerHTML += `<p><strong>What it sees:</strong> ${escapeHtml(fallback.symptoms)}</p>`;
   }

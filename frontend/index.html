@@ -64,8 +64,8 @@
 
         <section id="result-detect" class="result" hidden>
           <div class="result-tabs" id="result-tabs" role="tablist" hidden>
-            <button type="button" class="result-tab" role="tab" data-rtab="plantid">🌿 plant.id result</button>
-            <button type="button" class="result-tab" role="tab" data-rtab="gemini">🤖 Gemini opinion</button>
+            <button type="button" class="result-tab" role="tab" data-rtab="plantid"><span class="tab-icon">🔬 </span>Primary Diagnosis</button>
+            <button type="button" class="result-tab" role="tab" data-rtab="gemini"><span class="tab-icon">🧠 </span>AI Second Opinion</button>
           </div>
 
           <div id="rtab-plantid" role="tabpanel">
@@ -85,21 +85,19 @@
             </div>
 
             <div class="low-confidence" id="lowConfidence" hidden>
-              <h4>⚠️ plant.id's confidence is low</h4>
+              <h4>⚠️ Low confidence in this diagnosis</h4>
               <p id="lowConfidenceText"></p>
-              <button type="button" class="switch-tab-btn" id="goto-gemini" data-goto="gemini">See Gemini's second opinion →</button>
-              <details class="raw-guesses">
-                <summary>Show plant.id's low-confidence guesses anyway</summary>
-                <div id="rawGuesses"></div>
-              </details>
+              <button type="button" class="switch-tab-btn" id="goto-gemini" data-goto="gemini">View AI Second Opinion →</button>
             </div>
 
             <div id="extraDetails"></div>
+            <p class="source-note">Source: plant.id plant-health model</p>
           </div>
 
           <div id="rtab-gemini" role="tabpanel" hidden>
             <div id="fallbackSection" class="fallback-section" hidden></div>
-            <button type="button" class="switch-tab-btn secondary" data-goto="plantid">← View plant.id's result</button>
+            <p class="source-note" id="secondOpinionSource"></p>
+            <button type="button" class="switch-tab-btn secondary" data-goto="plantid">← View Primary Diagnosis</button>
           </div>
         </section>
       </div>
