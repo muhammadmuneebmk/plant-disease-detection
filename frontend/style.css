@@ -164,6 +164,30 @@ h1 {
   line-height: 1.4;
 }
 
+.subtitle + .photo-tips { margin-top: -10px; }
+
+.photo-tips {
+  margin: 0 0 8px;
+  padding-left: 20px;
+  color: var(--text);
+  font-size: 0.85rem;
+  line-height: 1.6;
+}
+
+.photo-hint {
+  margin: 0 0 14px;
+  color: var(--text-dim);
+  font-size: 0.78rem;
+}
+
+.photo-count {
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  margin-bottom: 8px;
+}
+
+.photo-count.complete { color: var(--accent); }
+
 /* ---------- upload box ---------- */
 .upload-box {
   display: flex;
@@ -392,6 +416,7 @@ button#btn-detect:disabled, button#btn-finder:disabled {
 }
 
 .fallback-section p { margin: 0; font-size: 0.88rem; color: var(--text-dim); line-height: 1.45; white-space: pre-wrap; }
+.fallback-section p + p { margin-top: 6px; }
 
 /* ---------- plant finder header ---------- */
 .finder-header {

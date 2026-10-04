@@ -1,4 +1,5 @@
 import base64
+import json
 import os
 
 import requests
@@ -32,13 +33,32 @@ OPENAI_API_KEY = _clean_env("OPENAI_API_KEY")
 OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
 OPENAI_URL = "https://api.openai.com/v1/chat/completions"
 
+REQUIRED_PHOTOS = 3
+
 FALLBACK_PROMPT = (
-    "You are an expert plant pathologist. A specialized plant-disease model looked at this leaf "
-    "photo and gave a low-confidence guess: crop '{crop}', possible issue '{disease}' "
-    "({probability:.0%} confidence). Look at the image yourself and give a short second opinion: "
-    "1) your best guess at the disease or issue, 2) the visual symptoms that support it, "
-    "3) a brief treatment suggestion. Keep it under 120 words, plain text, no markdown."
+    "You are a plant pathologist. These {count} photos all show the same plant{crop_hint}. "
+    "A specialist plant-health model found signs of a problem but could not identify the cause "
+    "with confidence. Examine every photo and give your own assessment.\n"
+    "Rules:\n"
+    "- Only name a disease, pest, or deficiency if you can see symptoms in the photos that support it.\n"
+    "- If the photos are too dark, blurry, or far away, or show nothing clearly abnormal, set "
+    "diagnosis to \"Uncertain\" and use symptoms to say what photo would help.\n"
+    "- Never describe symptoms you cannot actually see.\n"
+    "Respond in JSON with keys: diagnosis (short name, or \"Uncertain\"), confidence "
+    "(\"low\", \"medium\", or \"high\"), symptoms (what you see, max 2 sentences), treatment "
+    "(brief practical advice, max 2 sentences, or an empty string if diagnosis is \"Uncertain\")."
 )
+
+FALLBACK_SCHEMA = {
+    "type": "OBJECT",
+    "properties": {
+        "diagnosis": {"type": "STRING"},
+        "confidence": {"type": "STRING", "enum": ["low", "medium", "high"]},
+        "symptoms": {"type": "STRING"},
+        "treatment": {"type": "STRING"},
+    },
+    "required": ["diagnosis", "confidence", "symptoms", "treatment"],
+}
 
 app = FastAPI(title="Plant Disease Detection API")
 
@@ -55,74 +75,61 @@ def health_check():
     return {"status": "ok"}
 
 
-def call_gemini(image_b64: str, mime_type: str, prompt: str) -> str:
+def call_gemini(images: list[tuple[str, str]], prompt: str) -> dict:
+    parts = [{"text": prompt}] + [{"inline_data": {"mime_type": mime, "data": b64}} for b64, mime in images]
     response = requests.post(
         GEMINI_URL,
         params={"key": GEMINI_API_KEY},
         json={
-            "contents": [
-                {
-                    "parts": [
-                        {"text": prompt},
-                        {"inline_data": {"mime_type": mime_type, "data": image_b64}},
-                    ]
-                }
-            ]
+            "contents": [{"parts": parts}],
+            "generationConfig": {
+                "temperature": 0,
+                "responseMimeType": "application/json",
+                "responseSchema": FALLBACK_SCHEMA,
+            },
         },
-        timeout=30,
+        timeout=60,
     )
     response.raise_for_status()
-    data = response.json()
-    return data["candidates"][0]["content"]["parts"][0]["text"].strip()
+    return json.loads(response.json()["candidates"][0]["content"]["parts"][0]["text"])
 
 
-def call_openai(image_b64: str, mime_type: str, prompt: str) -> str:
+def call_openai(images: list[tuple[str, str]], prompt: str) -> dict:
+    content = [{"type": "text", "text": prompt}] + [
+        {"type": "image_url", "image_url": {"url": f"data:{mime};base64,{b64}"}} for b64, mime in images
+    ]
     response = requests.post(
         OPENAI_URL,
         headers={"Authorization": f"Bearer {OPENAI_API_KEY}"},
         json={
             "model": OPENAI_MODEL,
-            "messages": [
-                {
-                    "role": "user",
-                    "content": [
-                        {"type": "text", "text": prompt},
-                        {"type": "image_url", "image_url": {"url": f"data:{mime_type};base64,{image_b64}"}},
-                    ],
-                }
-            ],
-            "max_tokens": 300,
+            "messages": [{"role": "user", "content": content}],
+            "temperature": 0,
+            "response_format": {"type": "json_object"},
+            "max_tokens": 400,
         },
-        timeout=30,
+        timeout=60,
     )
     response.raise_for_status()
-    data = response.json()
-    return data["choices"][0]["message"]["content"].strip()
+    return json.loads(response.json()["choices"][0]["message"]["content"])
 
 
-def get_fallback_diagnosis(image_b64: str, mime_type: str, crop: str, disease: str, probability: float):
-    provider = FALLBACK_PROVIDER
-    prompt = FALLBACK_PROMPT.format(crop=crop or "unknown", disease=disease or "unknown", probability=probability)
+def get_fallback_diagnosis(images: list[tuple[str, str]], crop: str | None, crop_probability: float | None):
+    confident_crop = crop and crop_probability is not None and crop_probability >= CONFIDENCE_THRESHOLD
+    prompt = FALLBACK_PROMPT.format(count=len(images), crop_hint=f" (most likely {crop})" if confident_crop else "")
 
-    if provider == "gemini" and GEMINI_API_KEY:
-        text = call_gemini(image_b64, mime_type, prompt)
-    elif provider == "openai" and OPENAI_API_KEY:
-        text = call_openai(image_b64, mime_type, prompt)
+    if FALLBACK_PROVIDER == "gemini" and GEMINI_API_KEY:
+        result = call_gemini(images, prompt)
+    elif FALLBACK_PROVIDER == "openai" and OPENAI_API_KEY:
+        result = call_openai(images, prompt)
     else:
         return None
 
-    return {"provider": provider, "analysis": text}
+    return {"provider": FALLBACK_PROVIDER, **result}
 
 
-async def encode_images(files: list[UploadFile]) -> tuple[list[str], str]:
-    images_b64 = []
-    mime_type = "image/jpeg"
-    for i, f in enumerate(files):
-        content = await f.read()
-        images_b64.append(base64.b64encode(content).decode("utf-8"))
-        if i == 0:
-            mime_type = f.content_type or "image/jpeg"
-    return images_b64, mime_type
+async def read_images(files: list[UploadFile]) -> list[tuple[str, str]]:
+    return [(base64.b64encode(await f.read()).decode("utf-8"), f.content_type or "image/jpeg") for f in files]
 
 
 @app.post("/predict")
@@ -130,59 +137,67 @@ async def predict(files: list[UploadFile] = File(...)):
     if not KINDWISE_API_KEY:
         raise HTTPException(status_code=500, detail="KINDWISE_API_KEY is not set on the server")
 
-    images_b64, mime_type = await encode_images(files)
-    image_b64 = images_b64[0]
+    if len(files) != REQUIRED_PHOTOS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Please upload exactly {REQUIRED_PHOTOS} photos of the same plant (you sent {len(files)}).",
+        )
+
+    images = await read_images(files)
 
     try:
         response = requests.post(
             KINDWISE_URL,
             params={"details": DISEASE_DETAILS, "language": "en"},
             headers={"Api-Key": KINDWISE_API_KEY, "Content-Type": "application/json"},
-            json={"images": images_b64, "health": "all"},
+            json={"images": [b64 for b64, _ in images], "health": "all"},
             timeout=30,
         )
         response.raise_for_status()
     except requests.RequestException as exc:
         raise HTTPException(status_code=502, detail=f"Kindwise API request failed: {exc}") from exc
 
-    data = response.json()
-    result = data.get("result", {})
+    result = response.json().get("result", {})
 
     crop_suggestions = result.get("classification", {}).get("suggestions", [])
     disease_suggestions = result.get("disease", {}).get("suggestions", [])
+    health = result.get("is_healthy") or {}
 
-    top_crop = crop_suggestions[0] if crop_suggestions else None
+    top_crop = crop_suggestions[0] if crop_suggestions else {}
     top_disease = disease_suggestions[0] if disease_suggestions else None
 
-    is_healthy = result.get("is_healthy", {}).get("binary")
-    disease_probability = top_disease.get("probability") if top_disease else None
+    # Low-probability disease suggestions are near-noise and reorder between runs,
+    # so only name a disease when plant.id is actually confident in it.
+    if health.get("binary"):
+        verdict = "healthy"
+    elif top_disease and top_disease.get("probability", 0) >= CONFIDENCE_THRESHOLD:
+        verdict = "diseased"
+    else:
+        verdict = "uncertain"
 
     fallback = None
-    if disease_probability is not None and disease_probability < CONFIDENCE_THRESHOLD and not is_healthy:
+    if verdict == "uncertain":
         try:
-            fallback = get_fallback_diagnosis(
-                image_b64,
-                mime_type,
-                top_crop.get("name") if top_crop else None,
-                top_disease.get("name") if top_disease else None,
-                disease_probability,
-            )
-        except requests.RequestException:
+            fallback = get_fallback_diagnosis(images, top_crop.get("name"), top_crop.get("probability"))
+        except (requests.RequestException, KeyError, IndexError, ValueError):
             fallback = None
 
     return {
-        "crop": {
-            "name": top_crop.get("name") if top_crop else None,
-            "probability": top_crop.get("probability") if top_crop else None,
-        },
-        "disease": None
-        if not top_disease
-        else {
+        "verdict": verdict,
+        "health_probability": health.get("probability"),
+        "crop": {"name": top_crop.get("name"), "probability": top_crop.get("probability")},
+        "disease": {
             "name": top_disease.get("name"),
             "probability": top_disease.get("probability"),
-            "is_healthy": is_healthy,
             "details": top_disease.get("details", {}),
-        },
+        }
+        if verdict == "diseased"
+        else None,
+        "candidates": [
+            {"name": s.get("name"), "probability": s.get("probability")} for s in disease_suggestions[:3]
+        ]
+        if verdict == "uncertain"
+        else [],
         "fallback": fallback,
     }
 
@@ -192,14 +207,14 @@ async def identify(files: list[UploadFile] = File(...)):
     if not KINDWISE_API_KEY:
         raise HTTPException(status_code=500, detail="KINDWISE_API_KEY is not set on the server")
 
-    images_b64, _ = await encode_images(files)
+    images = await read_images(files)
 
     try:
         response = requests.post(
             KINDWISE_URL,
             params={"details": FINDER_DETAILS, "language": "en"},
             headers={"Api-Key": KINDWISE_API_KEY, "Content-Type": "application/json"},
-            json={"images": images_b64},
+            json={"images": [b64 for b64, _ in images]},
             timeout=30,
         )
         response.raise_for_status()

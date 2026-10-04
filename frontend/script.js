@@ -74,7 +74,7 @@ function setMeter(meterEl, labelEl, probability) {
 }
 
 // ---------- reusable multi-image uploader ----------
-function createUploader({ boxId, inputId, thumbRowId, btnId, onFilesChange }) {
+function createUploader({ boxId, inputId, thumbRowId, btnId, minFiles = 1, onCountChange }) {
   const box = document.getElementById(boxId);
   const input = document.getElementById(inputId);
   const thumbRow = document.getElementById(thumbRowId);
@@ -100,8 +100,8 @@ function createUploader({ boxId, inputId, thumbRowId, btnId, onFilesChange }) {
       thumb.appendChild(removeBtn);
       thumbRow.appendChild(thumb);
     });
-    btn.disabled = files.length === 0;
-    onFilesChange && onFilesChange(files.length > 0);
+    btn.disabled = files.length < minFiles;
+    onCountChange && onCountChange(files.length);
   }
 
   function addFiles(fileList) {
@@ -178,25 +178,36 @@ function runAgentSteps(container, steps) {
 const btnDetect = document.getElementById("btn-detect");
 btnDetect.querySelector(".btn-label").dataset.idle = "Analyze";
 
+const countDetect = document.getElementById("count-detect");
+
 const detectUploader = createUploader({
   boxId: "box-detect",
   inputId: "input-detect",
   thumbRowId: "thumbs-detect",
   btnId: "btn-detect",
+  minFiles: MAX_IMAGES,
+  onCountChange: (count) => {
+    const remaining = MAX_IMAGES - count;
+    countDetect.textContent =
+      remaining > 0
+        ? `${count} / ${MAX_IMAGES} photos added. Add ${remaining} more of the same plant.`
+        : `${count} / ${MAX_IMAGES} photos added. Ready to analyze.`;
+    countDetect.classList.toggle("complete", remaining === 0);
+  },
 });
 
 btnDetect.addEventListener("click", async () => {
   const files = detectUploader.getFiles();
-  if (!files.length) return;
+  if (files.length !== MAX_IMAGES) return;
 
   setLoading(btnDetect, true);
   document.getElementById("status-detect").textContent = "";
   document.getElementById("result-detect").hidden = true;
 
   const finishSteps = runAgentSteps(document.getElementById("steps-detect"), [
-    "Reading image",
+    "Reading 3 photos",
     "Consulting plant.id model",
-    "Compiling diagnosis",
+    "Checking confidence",
   ]);
 
   const formData = new FormData();
@@ -220,51 +231,80 @@ btnDetect.addEventListener("click", async () => {
   }
 });
 
+function displayDiseaseName(name) {
+  const commonName = toCommonName(name);
+  return commonName ? `${commonName} (${name})` : name;
+}
+
 function renderDetectResult(data) {
   document.getElementById("empty-detect").hidden = true;
   const resultEl = document.getElementById("result-detect");
-
   const crop = data.crop || {};
-  const disease = data.disease || {};
 
+  const cropProb = document.getElementById("cropProb");
   document.getElementById("cropName").textContent = crop.name || "Unknown";
-  setMeter(document.getElementById("cropMeter"), document.getElementById("cropProb"), crop.probability);
+  setMeter(document.getElementById("cropMeter"), cropProb, crop.probability);
+  if (crop.probability != null && crop.probability < 0.5) cropProb.textContent += " · low confidence";
 
-  const commonName = toCommonName(disease.name);
-  document.getElementById("diseaseName").textContent = disease.name
-    ? commonName
-      ? `${commonName} (${disease.name})`
-      : disease.name
-    : "Unknown";
-  setMeter(document.getElementById("diseaseMeter"), document.getElementById("diseaseProb"), disease.probability);
-
+  const diseaseName = document.getElementById("diseaseName");
+  const diseaseMeter = document.getElementById("diseaseMeter");
+  const diseaseProb = document.getElementById("diseaseProb");
   const extraDetails = document.getElementById("extraDetails");
   extraDetails.innerHTML = "";
-  const details = disease.details || {};
 
-  if (disease.is_healthy) {
-    const p = document.createElement("p");
-    p.textContent = "The plant looks healthy.";
-    extraDetails.appendChild(p);
-  } else {
+  if (data.verdict === "healthy") {
+    diseaseName.textContent = "Healthy";
+    setMeter(diseaseMeter, diseaseProb, data.health_probability);
+    if (data.health_probability != null) diseaseProb.textContent += " sure it's healthy";
+    extraDetails.appendChild(makeSection("Result", "No disease was detected in these 3 photos."));
+  } else if (data.verdict === "diseased") {
+    const disease = data.disease;
+    const details = disease.details || {};
+    diseaseName.textContent = displayDiseaseName(disease.name);
+    setMeter(diseaseMeter, diseaseProb, disease.probability);
     if (details.description) extraDetails.appendChild(makeSection("Description", details.description));
     if (details.treatment) extraDetails.appendChild(makeTreatmentSection(details.treatment));
-  }
-
-  const fallbackSection = document.getElementById("fallbackSection");
-  fallbackSection.innerHTML = "";
-  if (data.fallback && data.fallback.analysis) {
-    const label = FALLBACK_LABELS[data.fallback.provider] || data.fallback.provider;
-    fallbackSection.hidden = false;
-    fallbackSection.innerHTML = `
-      <h4>🤖 Second opinion from ${label} <span style="font-weight:400;color:var(--text-dim)">(confidence was low)</span></h4>
-      <p>${escapeHtml(data.fallback.analysis)}</p>
-    `;
   } else {
-    fallbackSection.hidden = true;
+    diseaseName.textContent = "Unclear";
+    const hasHealth = data.health_probability != null;
+    setMeter(diseaseMeter, diseaseProb, hasHealth ? 1 - data.health_probability : null);
+    if (hasHealth) diseaseProb.textContent += " likely a problem, cause not confirmed";
+    if (data.candidates && data.candidates.length) {
+      const list = data.candidates
+        .map((c) => `${displayDiseaseName(c.name)} (${Math.round(c.probability * 100)}%)`)
+        .join(", ");
+      extraDetails.appendChild(
+        makeSection("Low-confidence possibilities", `${list}. None of these is reliable enough to treat as a diagnosis.`)
+      );
+    }
   }
 
+  renderFallback(data.fallback);
   resultEl.hidden = false;
+}
+
+function renderFallback(fallback) {
+  const section = document.getElementById("fallbackSection");
+  section.innerHTML = "";
+  if (!fallback || !fallback.diagnosis) {
+    section.hidden = true;
+    return;
+  }
+
+  const label = FALLBACK_LABELS[fallback.provider] || fallback.provider;
+  const uncertain = fallback.diagnosis.trim().toLowerCase() === "uncertain";
+  const heading = uncertain
+    ? `${label} also can't tell from these photos`
+    : `${label} second opinion: ${fallback.diagnosis} (${fallback.confidence} confidence)`;
+
+  section.innerHTML = `<h4>🤖 ${escapeHtml(heading)}</h4>`;
+  if (fallback.symptoms) {
+    section.innerHTML += `<p><strong>What it sees:</strong> ${escapeHtml(fallback.symptoms)}</p>`;
+  }
+  if (!uncertain && fallback.treatment) {
+    section.innerHTML += `<p><strong>Suggested action:</strong> ${escapeHtml(fallback.treatment)}</p>`;
+  }
+  section.hidden = false;
 }
 
 function makeSection(title, content) {

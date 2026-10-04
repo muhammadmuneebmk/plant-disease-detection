@@ -27,16 +27,23 @@
       <div class="panel upload-panel">
         <span class="badge">🤖 AI Agent</span>
         <h1>Detect Disease</h1>
-        <p class="subtitle">Add up to 3 photos (leaf, whole plant, flower) — more angles means better accuracy.</p>
+        <p class="subtitle">Upload exactly 3 photos of the <strong>same plant</strong>:</p>
+        <ol class="photo-tips">
+          <li>Close-up of the affected leaf (fill the frame)</li>
+          <li>Another affected leaf, or the underside of the same leaf</li>
+          <li>The whole plant</li>
+        </ol>
+        <p class="photo-hint">Use daylight, keep the leaf in focus, and keep hands and feet out of the shot.</p>
 
         <label class="upload-box" id="box-detect">
           <input type="file" id="input-detect" accept="image/*" multiple hidden />
           <div class="upload-prompt">
             <span class="upload-icon">📷</span>
             <span class="upload-text">Drag & drop photos here</span>
-            <span class="upload-subtext">or click to browse (up to 3)</span>
+            <span class="upload-subtext">or click to browse (3 required)</span>
           </div>
         </label>
+        <div class="photo-count" id="count-detect">0 / 3 photos added</div>
         <div class="thumb-row" id="thumbs-detect"></div>
 
         <button id="btn-detect" disabled>
