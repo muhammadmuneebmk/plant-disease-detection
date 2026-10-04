@@ -281,6 +281,15 @@ function renderDetectResult(data) {
 
   renderFallback(data.fallback);
   resultEl.hidden = false;
+  scrollToResultOnMobile(resultEl);
+}
+
+// On stacked (mobile) layouts the result renders below the upload panel, out of view.
+function scrollToResultOnMobile(el) {
+  if (!matchMedia("(max-width: 900px)").matches) return;
+  const navbarHeight = document.querySelector(".navbar").offsetHeight;
+  const top = el.getBoundingClientRect().top + window.scrollY - navbarHeight - 12;
+  window.scrollTo(0, top);
 }
 
 function renderFallback(fallback) {
@@ -431,6 +440,7 @@ function renderFinderResult(data) {
   }
 
   resultEl.hidden = false;
+  scrollToResultOnMobile(resultEl);
 }
 
 // ================= Photo guide modal =================

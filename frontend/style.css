@@ -561,7 +561,30 @@ body.modal-open { overflow: hidden; }
   .navbar { padding: 0 16px; }
 }
 
+.nav-brand { white-space: nowrap; }
+.on-touch { display: none; }
+
+@media (hover: none) and (pointer: coarse) {
+  .on-desktop { display: none; }
+  .on-touch { display: inline; }
+  .thumb .remove { width: 26px; height: 26px; font-size: 13px; line-height: 26px; }
+}
+
 @media (max-width: 600px) {
+  .navbar { height: auto; flex-wrap: wrap; gap: 8px; padding: 10px 12px; }
+  .nav-brand { font-size: 1rem; }
+  .nav-tabs { width: 100%; }
+  .nav-tab { flex: 1; white-space: nowrap; padding: 10px 8px; font-size: 0.88rem; }
+
+  .page { padding: 12px; }
+  .workspace { gap: 12px; }
+  .panel { padding: 20px 16px; border-radius: 16px; }
+  h1 { font-size: 1.3rem; }
+  .upload-box { min-height: 120px; }
+  .thumb { width: 76px; height: 76px; }
+  .result-row { grid-template-columns: 1fr; gap: 14px; }
+  .empty-state { padding: 24px 0; }
+
   .modal { padding: 22px 16px; }
   .guide-cards { grid-template-columns: 1fr; }
   .guide-card { display: grid; grid-template-columns: 84px 1fr; gap: 12px; align-items: center; }
