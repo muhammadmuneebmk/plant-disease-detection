@@ -236,16 +236,18 @@ btnDetect.addEventListener("click", async () => {
   }
 });
 
+const capitalize = (s) => s.charAt(0).toUpperCase() + s.slice(1);
+
 // "Gossypium hirsutum" + "upland cotton" -> "Gossypium hirsutum (Upland cotton)"
 function withCommonName(scientific, common) {
   if (!scientific) return "Unknown";
-  if (!common || common.toLowerCase() === scientific.toLowerCase()) return scientific;
-  return `${scientific} (${common.charAt(0).toUpperCase()}${common.slice(1)})`;
+  if (!common || common.toLowerCase() === scientific.toLowerCase()) return capitalize(scientific);
+  return `${capitalize(scientific)} (${capitalize(common)})`;
 }
 
-function displayDiseaseName(name) {
-  const commonName = toCommonName(name);
-  return commonName ? `${commonName} (${name})` : name;
+// Prefer plant.id's own everyday name; fall back to our list for ones it doesn't provide.
+function displayDiseaseName(name, commonName) {
+  return withCommonName(name, commonName || toCommonName(name));
 }
 
 function renderDetectResult(data) {
@@ -272,7 +274,7 @@ function renderDetectResult(data) {
   } else if (data.verdict === "diseased") {
     const disease = data.disease;
     const details = disease.details || {};
-    diseaseName.textContent = displayDiseaseName(disease.name);
+    diseaseName.textContent = displayDiseaseName(disease.name, disease.common_name);
     setMeter(diseaseMeter, diseaseProb, disease.probability);
     if (details.description) extraDetails.appendChild(makeSection("Description", details.description));
     if (details.treatment) extraDetails.appendChild(makeTreatmentSection(details.treatment));
@@ -283,7 +285,7 @@ function renderDetectResult(data) {
     if (hasHealth) diseaseProb.textContent += " likely a problem, cause not confirmed";
     if (data.candidates && data.candidates.length) {
       const list = data.candidates
-        .map((c) => `${displayDiseaseName(c.name)} (${Math.round(c.probability * 100)}%)`)
+        .map((c) => `${displayDiseaseName(c.name, c.common_name)}: ${Math.round(c.probability * 100)}%`)
         .join(", ");
       extraDetails.appendChild(
         makeSection("Low-confidence possibilities", `${list}. None of these is reliable enough to treat as a diagnosis.`)
@@ -316,7 +318,7 @@ function renderFallback(fallback) {
   const uncertain = fallback.diagnosis.trim().toLowerCase() === "uncertain";
   const heading = uncertain
     ? `${label} also can't tell from these photos`
-    : `${label} second opinion: ${fallback.diagnosis} (${fallback.confidence} confidence)`;
+    : `${label} second opinion: ${fallback.diagnosis} · ${fallback.confidence} confidence`;
 
   section.innerHTML = `<h4>🤖 ${escapeHtml(heading)}</h4>`;
   if (fallback.symptoms) {

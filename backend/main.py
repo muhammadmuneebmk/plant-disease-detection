@@ -47,7 +47,9 @@ FALLBACK_PROMPT = (
     "- If the photos are too dark, blurry, or far away, or show nothing clearly abnormal, set "
     "diagnosis to \"Uncertain\" and use symptoms to say what photo would help.\n"
     "- Never describe symptoms you cannot actually see.\n"
-    "Respond in JSON with keys: diagnosis (short name, or \"Uncertain\"), confidence "
+    "Respond in JSON with keys: diagnosis (short name; if it has a scientific name, write it as "
+    "\"Scientific name (everyday name a farmer would use)\", e.g. \"Ramularia areola (Grey mildew)\"; "
+    "or \"Uncertain\"), confidence "
     "(\"low\", \"medium\", or \"high\"), symptoms (what you see, max 2 sentences), treatment "
     "(brief practical advice, max 2 sentences, or an empty string if diagnosis is \"Uncertain\")."
 )
@@ -135,6 +137,10 @@ async def read_images(files: list[UploadFile]) -> list[tuple[str, str]]:
     return [(base64.b64encode(await f.read()).decode("utf-8"), f.content_type or "image/jpeg") for f in files]
 
 
+def first_common_name(suggestion: dict) -> str | None:
+    return ((suggestion.get("details") or {}).get("common_names") or [None])[0]
+
+
 def require_photos(files: list[UploadFile]) -> None:
     if not MIN_PHOTOS <= len(files) <= MAX_PHOTOS:
         raise HTTPException(
@@ -201,18 +207,20 @@ async def predict(files: list[UploadFile] = File(...)):
         "health_probability": health.get("probability"),
         "crop": {
             "name": top_crop.get("name"),
-            "common_name": ((top_crop.get("details") or {}).get("common_names") or [None])[0],
+            "common_name": first_common_name(top_crop),
             "probability": top_crop.get("probability"),
         },
         "disease": {
             "name": top_disease.get("name"),
+            "common_name": first_common_name(top_disease),
             "probability": top_disease.get("probability"),
             "details": top_disease.get("details", {}),
         }
         if verdict == "diseased"
         else None,
         "candidates": [
-            {"name": s.get("name"), "probability": s.get("probability")} for s in disease_suggestions[:3]
+            {"name": s.get("name"), "common_name": first_common_name(s), "probability": s.get("probability")}
+            for s in disease_suggestions[:3]
         ]
         if verdict == "uncertain"
         else [],
